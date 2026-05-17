@@ -1,93 +1,71 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mini Reddit</title>
+  <title>Mini Reddit (Node)</title>
+  <style>
+    body { font-family: Arial; background:#111; color:white; }
+    input, button { padding:10px; margin:5px; }
+    .post { padding:10px; border-bottom:1px solid #333; cursor:pointer; }
+  </style>
 </head>
-
 <body>
 
-<input id="query" placeholder="r/cool or cool">
-<button onclick="search()">Search</button>
+<h2>Mini Reddit</h2>
+
+<input id="sub" placeholder="r/cool or cool">
+<button onclick="loadSub()">Search</button>
 
 <div id="posts"></div>
 <div id="comments"></div>
 
 <script>
-// 👇 MUST be inside script tags
 
-async function search(){
+const API = "http://localhost:3000/api";
 
-  let q = document.getElementById("query").value.trim();
+async function loadSub(){
+
+  let q = document.getElementById("sub").value;
+
+  q = q.replace("r/", "").trim();
+
+  const res = await fetch(`${API}/sub/${q}`);
+  const data = await res.json();
+
   const postsDiv = document.getElementById("posts");
-  const commentsDiv = document.getElementById("comments");
+  postsDiv.innerHTML = "";
 
-  postsDiv.innerHTML = "Loading...";
-  commentsDiv.innerHTML = "";
+  data.data.children.forEach(p => {
 
-  if(!q){
-    postsDiv.innerHTML = "Type something like r/cool or cool";
-    return;
-  }
+    const post = p.data;
 
-  q = q.toLowerCase();
-  q = q.replace("https://www.reddit.com/r/", "");
-  q = q.replace("http://www.reddit.com/r/", "");
-
-  if(q.startsWith("r/")){
-    q = q.slice(2);
-  }
-
-  try{
-
-    const res = await fetch(`https://www.reddit.com/r/${q}.json`);
-
-    if(!res.ok){
-      throw new Error("Subreddit not found");
-    }
-
-    const data = await res.json();
-
-    const posts = data.data.children;
-
-    postsDiv.innerHTML = "";
-
-    posts.forEach(p => {
-      const post = p.data;
-
-      postsDiv.innerHTML += `
-        <div onclick="loadPost('${post.permalink}')">
-          <b>${post.title}</b><br>
-          👍 ${post.ups}
-          <hr>
-        </div>
-      `;
-    });
-
-  } catch(err){
-    postsDiv.innerHTML = err.message;
-  }
+    postsDiv.innerHTML += `
+      <div class="post" onclick="loadPost('${post.permalink}')">
+        <b>${post.title}</b><br>
+        👍 ${post.ups}
+      </div>
+    `;
+  });
 }
 
 async function loadPost(permalink){
 
-  const commentsDiv = document.getElementById("comments");
-  commentsDiv.innerHTML = "Loading comments...";
-
-  const res = await fetch(`https://www.reddit.com${permalink}.json`);
+  const res = await fetch(`${API}/post?url=${permalink}`);
   const data = await res.json();
 
   const post = data[0].data.children[0].data;
   const comments = data[1].data.children;
 
-  commentsDiv.innerHTML = `<h2>${post.title}</h2><hr>`;
+  const commentsDiv = document.getElementById("comments");
+
+  commentsDiv.innerHTML = `
+    <h3>${post.title}</h3>
+    <hr>
+  `;
 
   comments.forEach(c => {
     if(c.data && c.data.body){
       commentsDiv.innerHTML += `
-        <div>
-          <b>u/${c.data.author}</b><br>
-          ${c.data.body}
-        </div><hr>
+        <p><b>u/${c.data.author}</b><br>${c.data.body}</p><hr>
       `;
     }
   });
