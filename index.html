@@ -2,152 +2,177 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mini Spotify</title>
+<title>Mini Reddit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{
-  margin:0;
-  background:#121212;
-  color:white;
-  font-family:Arial,sans-serif;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0f14;
+  color: white;
 }
 
-header{
-  background:#1DB954;
-  padding:15px;
-  font-size:24px;
-  font-weight:bold;
+header {
+  padding: 15px;
+  background: #ff4500;
+  display: flex;
+  gap: 10px;
 }
 
-.container{
-  padding:20px;
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
 }
 
-.search{
-  display:flex;
-  gap:10px;
-  margin-bottom:20px;
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-input{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  background:#282828;
-  color:white;
+.container {
+  display: flex;
+  height: calc(100vh - 60px);
 }
 
-button{
-  padding:12px 18px;
-  border:none;
-  border-radius:8px;
-  background:#1DB954;
-  color:black;
-  font-weight:bold;
-  cursor:pointer;
+.left, .right {
+  overflow: auto;
+  padding: 15px;
 }
 
-.results{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  gap:20px;
+.left {
+  width: 40%;
+  border-right: 1px solid #222;
 }
 
-.card{
-  background:#181818;
-  padding:15px;
-  border-radius:12px;
-  transition:.2s;
+.right {
+  flex: 1;
 }
 
-.card:hover{
-  background:#282828;
+.post {
+  background: #111827;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
-.card img{
-  width:100%;
-  border-radius:10px;
+.post:hover {
+  background: #1f2937;
 }
 
-.title{
-  margin-top:10px;
-  font-weight:bold;
+.comment {
+  background: #111827;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 8px;
 }
 
-.artist{
-  color:#aaa;
-  font-size:14px;
-}
-
-audio{
-  width:100%;
-  margin-top:10px;
+.reply {
+  margin-left: 20px;
+  border-left: 2px solid #333;
+  padding-left: 10px;
+  margin-top: 5px;
+  color: #ccc;
 }
 </style>
 </head>
 <body>
 
-<header>Mini Spotify</header>
+<header>
+  <input id="subreddit" placeholder="Search subreddit (e.g. javascript)">
+  <button onclick="loadSub()">Search</button>
+</header>
 
 <div class="container">
 
-  <div class="search">
-    <input id="query" placeholder="Search tracks...">
-    <button onclick="search()">Search</button>
-  </div>
+  <div class="left" id="posts"></div>
 
-  <div class="results" id="results"></div>
+  <div class="right" id="comments">
+    <h3>Select a post</h3>
+  </div>
 
 </div>
 
 <script>
 
-const TOKEN = "YOUR_SPOTIFY_ACCESS_TOKEN";
+let currentSub = "javascript";
 
-async function search(){
+async function loadSub(){
 
-  const q = document.getElementById("query").value;
+  const sub = document.getElementById("subreddit").value || "javascript";
+  currentSub = sub;
 
-  const res = await fetch(
-    `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=12`,
-    {
-      headers:{
-        Authorization:`Bearer ${TOKEN}`
-      }
-    }
-  );
-
+  const res = await fetch(`https://www.reddit.com/r/${sub}.json`);
   const data = await res.json();
 
-  const results = document.getElementById("results");
+  const postsDiv = document.getElementById("posts");
+  postsDiv.innerHTML = "";
 
-  results.innerHTML = "";
+  data.data.children.forEach(p => {
 
-  data.tracks.items.forEach(track=>{
+    const post = p.data;
 
-    results.innerHTML += `
-      <div class="card">
-
-        <img src="${track.album.images[0].url}">
-
-        <div class="title">${track.name}</div>
-
-        <div class="artist">
-          ${track.artists.map(a=>a.name).join(", ")}
-        </div>
-
-        ${
-          track.preview_url
-          ? `<audio controls src="${track.preview_url}"></audio>`
-          : `<p>No preview available</p>`
-        }
-
+    postsDiv.innerHTML += `
+      <div class="post" onclick="loadPost('${post.permalink}')">
+        <b>${post.title}</b><br>
+        <small>👍 ${post.ups}</small>
       </div>
     `;
   });
 }
+
+async function loadPost(permalink){
+
+  const res = await fetch(`https://www.reddit.com${permalink}.json`);
+  const data = await res.json();
+
+  const commentsDiv = document.getElementById("comments");
+  commentsDiv.innerHTML = "";
+
+  const post = data[0].data.children[0].data;
+
+  commentsDiv.innerHTML += `
+    <h2>${post.title}</h2>
+    <p>${post.selftext || ""}</p>
+    <hr>
+    <h3>Comments</h3>
+  `;
+
+  const comments = data[1].data.children;
+
+  comments.forEach(c => renderComment(c.data, commentsDiv));
+}
+
+function renderComment(comment, parent, level = 0){
+
+  if(!comment || !comment.body) return;
+
+  const div = document.createElement("div");
+  div.className = "comment";
+  div.style.marginLeft = level * 20 + "px";
+
+  div.innerHTML = `
+    <b>u/${comment.author}</b><br>
+    ${comment.body}
+  `;
+
+  parent.appendChild(div);
+
+  if(comment.replies && comment.replies.data){
+
+    comment.replies.data.children.forEach(r => {
+      renderComment(r.data, parent, level + 1);
+    });
+  }
+}
+
+// default load
+loadSub();
 
 </script>
 
