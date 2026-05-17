@@ -1,180 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Mini Reddit</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+async function search(){
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0b0f14;
-  color: white;
-}
-
-header {
-  padding: 15px;
-  background: #ff4500;
-  display: flex;
-  gap: 10px;
-}
-
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-}
-
-button {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.container {
-  display: flex;
-  height: calc(100vh - 60px);
-}
-
-.left, .right {
-  overflow: auto;
-  padding: 15px;
-}
-
-.left {
-  width: 40%;
-  border-right: 1px solid #222;
-}
-
-.right {
-  flex: 1;
-}
-
-.post {
-  background: #111827;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.post:hover {
-  background: #1f2937;
-}
-
-.comment {
-  background: #111827;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 8px;
-}
-
-.reply {
-  margin-left: 20px;
-  border-left: 2px solid #333;
-  padding-left: 10px;
-  margin-top: 5px;
-  color: #ccc;
-}
-</style>
-</head>
-<body>
-
-<header>
-  <input id="subreddit" placeholder="Search subreddit (e.g. javascript)">
-  <button onclick="loadSub()">Search</button>
-</header>
-
-<div class="container">
-
-  <div class="left" id="posts"></div>
-
-  <div class="right" id="comments">
-    <h3>Select a post</h3>
-  </div>
-
-</div>
-
-<script>
-
-let currentSub = "javascript";
-
-async function loadSub(){
-
-  const sub = document.getElementById("subreddit").value || "javascript";
-  currentSub = sub;
-
-  const res = await fetch(`https://www.reddit.com/r/${sub}.json`);
-  const data = await res.json();
-
+  let q = document.getElementById("query").value.trim();
   const postsDiv = document.getElementById("posts");
-  postsDiv.innerHTML = "";
-
-  data.data.children.forEach(p => {
-
-    const post = p.data;
-
-    postsDiv.innerHTML += `
-      <div class="post" onclick="loadPost('${post.permalink}')">
-        <b>${post.title}</b><br>
-        <small>👍 ${post.ups}</small>
-      </div>
-    `;
-  });
-}
-
-async function loadPost(permalink){
-
-  const res = await fetch(`https://www.reddit.com${permalink}.json`);
-  const data = await res.json();
-
   const commentsDiv = document.getElementById("comments");
+
+  postsDiv.innerHTML = "Loading...";
   commentsDiv.innerHTML = "";
 
-  const post = data[0].data.children[0].data;
+  if(!q){
+    postsDiv.innerHTML = "<p class='error'>Type something like r/cool or cool</p>";
+    return;
+  }
 
-  commentsDiv.innerHTML += `
-    <h2>${post.title}</h2>
-    <p>${post.selftext || ""}</p>
-    <hr>
-    <h3>Comments</h3>
-  `;
+  // 🔥 CLEAN INPUT (this is the important fix)
+  q = q.toLowerCase();
 
-  const comments = data[1].data.children;
+  // remove full reddit URL if pasted
+  q = q.replace("https://www.reddit.com/r/", "");
+  q = q.replace("http://www.reddit.com/r/", "");
 
-  comments.forEach(c => renderComment(c.data, commentsDiv));
-}
+  // remove r/ prefix if user typed it
+  if(q.startsWith("r/")){
+    q = q.slice(2);
+  }
 
-function renderComment(comment, parent, level = 0){
+  try{
 
-  if(!comment || !comment.body) return;
+    const url = `https://www.reddit.com/r/${q}.json`;
 
-  const div = document.createElement("div");
-  div.className = "comment";
-  div.style.marginLeft = level * 20 + "px";
+    const res = await fetch(url);
 
-  div.innerHTML = `
-    <b>u/${comment.author}</b><br>
-    ${comment.body}
-  `;
+    if(!res.ok){
+      throw new Error("Subreddit not found");
+    }
 
-  parent.appendChild(div);
+    const data = await res.json();
 
-  if(comment.replies && comment.replies.data){
+    const posts = data.data.children;
 
-    comment.replies.data.children.forEach(r => {
-      renderComment(r.data, parent, level + 1);
+    if(!posts.length){
+      postsDiv.innerHTML = "<p class='error'>No posts found</p>";
+      return;
+    }
+
+    postsDiv.innerHTML = "";
+
+    posts.forEach(p => {
+
+      const post = p.data;
+
+      postsDiv.innerHTML += `
+        <div class="post" onclick="loadPost('${post.permalink}')">
+          <b>${post.title}</b><br>
+          👍 ${post.ups}
+        </div>
+      `;
     });
+
+  } catch(err){
+    postsDiv.innerHTML = `<p class="error">${err.message}</p>`;
   }
 }
-
-// default load
-loadSub();
-
-</script>
-
-</body>
-</html>
