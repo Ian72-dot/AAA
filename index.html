@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Mega Embed</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      color: #1DB954;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #181818;
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,.4);
+    }
+
+    .card h2 {
+      margin-bottom: 10px;
+      font-size: 18px;
+      color: #1DB954;
+    }
+
+    iframe {
+      border-radius: 12px;
+      width: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Spotify Embedded Dashboard</h1>
+
+  <div class="grid">
+
+    <!-- Playlist -->
+    <div class="card">
+      <h2>Playlist</h2>
+      <iframe
+        src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M"
+        height="380"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    </div>
+
+    <!-- Album -->
+    <div class="card">
+      <h2>Album</h2>
+      <iframe
+        src="https://open.spotify.com/embed/album/4aawyAB9vmqN3uQ7FjRGTy"
+        height="380"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    </div>
+
+    <!-- Track -->
+    <div class="card">
+      <h2>Track</h2>
+      <iframe
+        src="https://open.spotify.com/embed/track/7qiZfU4dY1lWllzX7mPBI3"
+        height="152"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    </div>
+
+    <!-- Artist -->
+    <div class="card">
+      <h2>Artist</h2>
+      <iframe
+        src="https://open.spotify.com/embed/artist/06HL4z0CvFAxyc27GXpf02"
+        height="380"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    </div>
+
+    <!-- Podcast -->
+    <div class="card">
+      <h2>Podcast</h2>
+      <iframe
+        src="https://open.spotify.com/embed/show/4rOoJ6Egrf8K2IrywzwOMk"
+        height="232"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    </div>
+
+    <!-- Episode -->
+    <div class="card">
+      <h2>Podcast Episode</h2>
+      <iframe
+        src="https://open.spotify.com/embed/episode/512ojhOuo1ktJprKbVcKyQ"
+        height="232"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      </iframe>
+    </div>
+
+  </div>
+
+</body>
+</html>
