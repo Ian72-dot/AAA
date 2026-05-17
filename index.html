@@ -1,3 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mini Reddit</title>
+</head>
+
+<body>
+
+<input id="query" placeholder="r/cool or cool">
+<button onclick="search()">Search</button>
+
+<div id="posts"></div>
+<div id="comments"></div>
+
+<script>
+// 👇 MUST be inside script tags
+
 async function search(){
 
   let q = document.getElementById("query").value.trim();
@@ -8,27 +25,21 @@ async function search(){
   commentsDiv.innerHTML = "";
 
   if(!q){
-    postsDiv.innerHTML = "<p class='error'>Type something like r/cool or cool</p>";
+    postsDiv.innerHTML = "Type something like r/cool or cool";
     return;
   }
 
-  // 🔥 CLEAN INPUT (this is the important fix)
   q = q.toLowerCase();
-
-  // remove full reddit URL if pasted
   q = q.replace("https://www.reddit.com/r/", "");
   q = q.replace("http://www.reddit.com/r/", "");
 
-  // remove r/ prefix if user typed it
   if(q.startsWith("r/")){
     q = q.slice(2);
   }
 
   try{
 
-    const url = `https://www.reddit.com/r/${q}.json`;
-
-    const res = await fetch(url);
+    const res = await fetch(`https://www.reddit.com/r/${q}.json`);
 
     if(!res.ok){
       throw new Error("Subreddit not found");
@@ -38,26 +49,51 @@ async function search(){
 
     const posts = data.data.children;
 
-    if(!posts.length){
-      postsDiv.innerHTML = "<p class='error'>No posts found</p>";
-      return;
-    }
-
     postsDiv.innerHTML = "";
 
     posts.forEach(p => {
-
       const post = p.data;
 
       postsDiv.innerHTML += `
-        <div class="post" onclick="loadPost('${post.permalink}')">
+        <div onclick="loadPost('${post.permalink}')">
           <b>${post.title}</b><br>
           👍 ${post.ups}
+          <hr>
         </div>
       `;
     });
 
   } catch(err){
-    postsDiv.innerHTML = `<p class="error">${err.message}</p>`;
+    postsDiv.innerHTML = err.message;
   }
 }
+
+async function loadPost(permalink){
+
+  const commentsDiv = document.getElementById("comments");
+  commentsDiv.innerHTML = "Loading comments...";
+
+  const res = await fetch(`https://www.reddit.com${permalink}.json`);
+  const data = await res.json();
+
+  const post = data[0].data.children[0].data;
+  const comments = data[1].data.children;
+
+  commentsDiv.innerHTML = `<h2>${post.title}</h2><hr>`;
+
+  comments.forEach(c => {
+    if(c.data && c.data.body){
+      commentsDiv.innerHTML += `
+        <div>
+          <b>u/${c.data.author}</b><br>
+          ${c.data.body}
+        </div><hr>
+      `;
+    }
+  });
+}
+
+</script>
+
+</body>
+</html>
